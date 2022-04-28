@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import {
   Chart as ChartJS,
@@ -77,7 +77,6 @@ const tokens = ['tWETH', 'tCOMP', 'TST']
 function App() {
   const [data, setData] = useState<Object>({})
   const [labels, setLabels] = useState<Array<string>>([])
-  const [flag, setFlag] = useState<boolean>(false)
   const [poolId, setPoolId] = useState<number>(0)
   const [tokenId, setTokenId] = useState<number>(0)
 
@@ -101,38 +100,33 @@ function App() {
     setTokenId(index)
   };
 
-  let tmpLabels = new Array<string>()
-  let tmpData = {}
-
   const getTwoDigital = (str: string) => {
     return str.padStart(2, '0')
   }
 
-  if (!flag) {
-    setFlag(true)
-    for (let m = 0; m < 4; m++) {
-      const month = getTwoDigital((m + 1).toString())
-      let d = 0
-      while (d < 31) {
-        const day = getTwoDigital((d + 1).toString())
+  useEffect(() => {
+    let tmpLabels = new Array<string>()
+    let tmpData = {}
+    for (let m = 4; m > 0; m--) {
+      const month = getTwoDigital(m.toString())
+      let d = 31
+      while (d > 0) {
+        const day = getTwoDigital(d.toString())
         fetch(`backups/2022-${month}-${day}/db_00.json`, { mode: 'no-cors' })
           .then(response => response.json())
           .then(datum => {
             tmpLabels.push(month + day)
             tmpData = { ...tmpData, [month + day]: datum }
+            setLabels([...tmpLabels])
+            setData(tmpData)
           })
           .catch(error => console.error(error))
-          .finally(() => {
-            if (m === 3 && d === 31) {
-              setLabels(tmpLabels)
-              setData(tmpData)
-            }
-          })
-        d++
+        d--
       }
     }
-  }
-  console.log('data', data)
+  }, [])
+
+  console.log('labels', labels)
 
   let tvlData = []
   let volumeData = []
